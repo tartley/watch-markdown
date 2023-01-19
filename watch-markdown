@@ -10,6 +10,10 @@
 # TODO: Does our 'trap' need /bin/kill, or will just 'kill' builtin work, now
 # that we no longer try to kill 0, negative PID/PG numbers, etc.
 #
+# TODO: What happens if I skip my explicit error checks on the given markdown
+# file, and just pass it to pandoc? Does it produce equivalent (or better?)
+# error messages for me?
+#
 # TODO: reinstate my customizations to github.css.
 #
 # TODO: Do we even need the watch-markdown-gui wrapper? Adding it did not fix
