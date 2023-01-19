@@ -3,12 +3,14 @@
 sudo apt install -y falkon pandoc
 
 (
+    this_dir=$(pwd)
     cd "$HOME/bin"
-    ln -sf "$HOME/docs/code/supported/watch-markdown/watch-markdown" .
+    ln -sf "$this_dir/watch-markdown" .
+    ln -sf "$this_dir/watch-markdown-gui" .
 )
 
 config="$HOME/.config/watch-markdown"
 mkdir -p "$config"
 cp github.css "$config"
 
-desktop-file-install --dir="$HOME/.local/share/applications/" watch-markdown.desktop
+desktop-file-install --dir="$HOME/.local/share/applications/" watch-markdown-gui.desktop

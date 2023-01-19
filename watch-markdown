@@ -7,41 +7,54 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO Opening via GUI should use a wrapper script that redirects everything to
-# a log
+# TODO: Does our 'trap' need /bin/kill, or will just 'kill' builtin work, now
+# that we no longer try to kill 0, negative PID/PG numbers, etc.
 #
-# TODO: open an md by double-clicking: check the logs!
+# TODO: reinstate my customizations to github.css.
 #
-# TODO Opening from GUI fails because $in = <abspath>/my-guide.md, but
-# inotifywait gives $file='my-guide.md', so they don't compare equal in the
-# explicit 'if' in the while loop.
-#
-# TODO: watch-markdow currently works when invoked from the command-line, but
-# when invoked from the Gnome GUI by double-clicking a markdown file, it leaves
-# three processes behind after exiting the HTML viewer. This is puzzling,
-# because when running from the command-line, we only seem to create two
-# processes (the watch-markdown Bash invocation, which is blocking until the
-# HTML viewer exits, and the background inotify watch for markdown changes it
-# kicks off.) Theory: A normally-transient process is getting wedged because it
-# is writing to stderr/stdout, which isn't attached when we launch from the
-# GUI. Hence -gui wrapper that redirects everything should help.
+# TODO: Do we even need the watch-markdown-gui wrapper? Adding it did not fix
+# the leftover processes problem (a correct 'trap' cleanup fixed that.)
 #
 # TODO: Check it also works by 'Open With Other Application'
 #
 # TODO: Consider breaking out the conversion into a new wrapper script,
 # `markdown2html`, so that I can invoke that standalone and be sure of getting
-# the same output as I see when using this tool.
+# the same output as I see when using this tool. Can we handle markdown on
+# stdin as an alternative to a named file parameter?
 #
-# TODO: With markdown2html in place place for when we explicitly want to
-# generate an html file, watch-markdown could write its html to /tmp, and
-# delete it when done, so as not to clutter things with unwanted html files
-# every time we view markdown.
+# TODO: With markdown2html in place for when we explicitly want to generate an
+# html file, watch-markdown could write its html to /tmp, and delete it when
+# done, so as not to clutter things with unwanted html files every time we view
+# markdown.
 #
 # TODO: Same thing but for rst. Which presumably pandoc handles too.
+#
+# TODO: Turn off set -x
 
 set -e -x
 
+[[ -n "$1" ]] || {
+    echo "ERROR: No markdown filename given" >&2
+    exit 1
+}
+[[ "$1" = *.md ]] || {
+    echo "ERROR: $1 should end in .md" >&2
+    exit 1
+}
+[[ -f "$1" ]] || {
+    echo "ERROR: $1 is not a file" >&2
+    exit 1
+}
+[[ -r $1 ]] || {
+    echo "ERROR: $1 is not readable" >&2
+    exit 1
+}
+[[ -s $1 ]] || {
+    echo "ERROR: $1 is zero bytes" >&2
+    exit 1
+}
 in="$1"
+
 out="${in%.md}.html"
 css="$HOME/.config/watch-markdown/github.css"
 
@@ -53,28 +66,30 @@ function convert {
 convert
 
 # When we exit (ie when the html viewer exits), kill the background process below
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+function killjobs {
+    jobs -p >&2 # debugging
+    jobs -p | xargs -i /bin/kill {}
+}
+trap "killjobs" INT TERM EXIT
 
 # In the background, watch for updates to the markdown, and convert to HTML again
-(
-    # We need to run inotifywait on two event types:
-    #   1. close_write (as is done when directly modifying the file)
-    #   2. moved_to (as is done by Vi-style write-new-then-move-to-overwrite)
-    # After (2), a watch on the file will no longer work, since it has been replaced
-    # by a new, different file of the same name. Hence we need to set up a watch on
-    # the parent directory of the markdown file, and then filter the resulting events
-    # for the markdown filename.
-    inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $(dirname "$in") \
-    | while IFS=/ read -r events file; do
-        # If the event is for the markdown file we are watching
-        if [ "$(realpath $file)" = "$(realpath $in)" ]; then
-            convert
-        fi
-    done
-) &
-
-# debugging aid
-jobs >&2
+# We need to run inotifywait on two event types:
+#   1. close_write (as is done when directly modifying the file)
+#   2. moved_to (as is done by Vi-style write-new-then-move-to-overwrite)
+# After (2), a watch on the file will no longer work, since it has been replaced
+# by a new, different file of the same name. Hence we need to set up a watch on
+# the parent directory of the markdown file, and then filter the resulting events
+# for the markdown filename.
+parentdir=$(dirname "$in")
+inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $parentdir \
+| while IFS=/ read -r events file; do
+    # If the event is for the markdown file we are watching
+    actual=$(realpath $parentdir/$file)
+    expected=$(realpath $in)
+    if [ "$actual" = "$expected" ]; then
+        convert
+    fi
+done &
 
 # Open a window to view the generated HTML, and block here until it exits.
 # Firefox & Chroms don't re-render a local html file when it changes. Nor can

@@ -2,7 +2,7 @@
 Version=1.0
 Name=Watch Markdown
 Comment=Render markdown file as HTML, display in Gnome Web, and update on modifications.
-Exec=/home/jhartley/bin/watch-markdown %f
+Exec=/home/jhartley/bin/watch-markdown-gui %f
 MimeType=text/markdown
 Icon=/usr/share/icons/hicolor/32x32/actions/open-menu.svg
 Terminal=false
