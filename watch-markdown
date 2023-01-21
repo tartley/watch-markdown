@@ -7,6 +7,8 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
+# TODO: Add a README
+#
 # TODO: Does our 'trap' need /bin/kill, or will just 'kill' builtin work, now
 # that we no longer try to kill 0, negative PID/PG numbers, etc.
 #
@@ -58,12 +60,11 @@ set -e -x
     exit 1
 }
 in="$1"
-
 out="${in%.md}.html"
-css="$HOME/.config/watch-markdown/github.css"
 
 function convert {
     # Convert the given markdown file to an HTML file
+    css="$HOME/.config/watch-markdown/github.css"
     pandoc --standalone -c "$css" "$in" -o "$out"
 }
 

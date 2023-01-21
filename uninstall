@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# We no longer need 'apt install falkon pandoc', but don't automatically remove them
+# since the user may have had them installed already.
+
+rm ~/.local/bin/watch-markdown
+rm ~/.local/bin/watch-markdown-gui
+rm -r ~/.config/watch-markdown
+rm ~/.local/share/applications/watch-markdown-gui.desktop
+
