@@ -7,10 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO:
-# Use the html output as a mutex - exit if another watch-markdown is already
-# running on the given source file.
-#
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
 # TODO: Also handle a conversion for which we need a different viewer app.
@@ -41,6 +37,15 @@ in="$1"
 outdir='/tmp/watch-markdown'
 mkdir -p "$outdir"
 out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
+
+# Exit if a file exists at our proposed output location. We infer this means
+# another instance of watch-markdown is already running on the given input
+# file, so anything else we might do to write to this output would be redundant
+# and possibly harmful.
+if [ -f "$out" ]; then
+    echo "watch-markdown: ERROR: Output file already exists, is watch-markdown already running on this input? '$out'" >&2
+    exit 2
+fi
 
 function convert {
     # Convert the given markdown file to an HTML file
