@@ -7,10 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: What happens if I skip my explicit error checks on the given markdown
-# file, and just pass it to pandoc? Does it produce equivalent (or better?)
-# error messages for me?
-#
 # TODO: reinstate my customizations to github.css.
 #
 # TODO: Do we even need the watch-markdown-gui wrapper? Adding it did not fix
@@ -29,31 +25,18 @@
 # markdown.
 #
 # TODO: Same thing but for rst. Which presumably pandoc handles too.
-#
-# TODO: Turn off set -x
 
 set -e # -x
 
-[[ -n "$1" ]] || {
-    echo "ERROR: No markdown filename given" >&2
+if [ "$#" -eq 0 ]; then
+    echo "watch-markdown: ERROR: No markdown filename given" >&2
     exit 1
-}
-[[ "$1" = *.md ]] || {
-    echo "ERROR: $1 should end in .md" >&2
+fi
+if [ "$#" -gt 1 ]; then
+    echo "watch-markdown: ERROR: More than one markdown filename given" >&2
     exit 1
-}
-[[ -f "$1" ]] || {
-    echo "ERROR: $1 is not a file" >&2
-    exit 1
-}
-[[ -r $1 ]] || {
-    echo "ERROR: $1 is not readable" >&2
-    exit 1
-}
-[[ -s $1 ]] || {
-    echo "ERROR: $1 is zero bytes" >&2
-    exit 1
-}
+fi
+
 in="$1"
 out="${in%.md}.html"
 
