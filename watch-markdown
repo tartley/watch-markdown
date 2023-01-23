@@ -8,12 +8,6 @@
 # HTML file.
 
 # TODO:
-# watch-markdown could write its html to /tmp, and delete it when done, so as
-# not to clutter things with unwanted html files every time we view markdown.
-#
-# TODO: Delete the html file on exit
-#
-# TODO:
 # Use the html output as a mutex - exit if another watch-markdown is already
 # running on the given source file.
 #
@@ -40,7 +34,13 @@ if [ "$#" -gt 1 ]; then
 fi
 
 in="$1"
-out="${in%.md}.html"
+
+# Output to a tmp filename which is human-readably related to the full pathname
+# of the input file it is derived from (but converting slashes to make a valid
+# filename)
+outdir='/tmp/watch-markdown'
+mkdir -p "$outdir"
+out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 
 function convert {
     # Convert the given markdown file to an HTML file
@@ -54,7 +54,9 @@ convert
 function killjobs {
     # Silence expected 'no such process' errors when a terminal invocation of
     # watch-markdown is killed with Ctrl-C.
-    jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" >&2
+    jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" | :
+    # Clean up our output file
+    rm "$out" >&2
 }
 trap "killjobs" INT TERM EXIT
 
