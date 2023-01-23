@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-# We no longer need 'apt install falkon pandoc', but don't automatically remove them
-# since the user may have had them installed already.
+set -e
+
+# We no longer need the packages that 'install' apt-installed,
+# but don't automatically remove them since the user may have had them
+# installed beforehand.
 
 rm ~/.local/bin/watch-markdown
 rm -r ~/.config/watch-markdown
