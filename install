@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sudo apt install -y falkon pandoc
+sudo apt install -y inotify-tools falkon pandoc
 
 (
     this_dir=$(pwd)
