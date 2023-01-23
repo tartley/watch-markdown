@@ -37,12 +37,17 @@ and run it. It `sudo apt install`s dependencies, and copies files into
 undoes everything except the apt install (in case you already had those
 packages installed).
 
+I suggest making 'watch-markdown' the default application to open markdown
+files in your desktop GUI. (On Gnome, right click a markdown file, Properties,
+the "Open With" tab, and select "Watch Markdown".)
+
 ## Invocation
 
-I suggest making 'watch-markdown'the default application to open Markdown files
-on your desktop, and double-click a markdown file. Or, you can open an
-individual markdown file using things like Gnome's "Open with other
-application" menu.
+If you registered watch-markdown as the application to open markdown files,
+then invoke it by double-clicking a markdown file.
+
+Alternatively, you can open an individual markdown file using things like
+Gnome's "Open with other application" menu.
 
 The above are the expected ways to use watch-markdown, but it can also be
 usefully invoked from the command line, as:
