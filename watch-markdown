@@ -70,7 +70,7 @@ function convert {
 
 convert
 
-# When we exit (ie when the html viewer exits), kill the background process below
+# When we exit (ie when the html viewer below exits), kill our background processes.
 function killjobs {
     jobs -p >&2 # debugging
     jobs -p | xargs -i /bin/kill {}
@@ -79,12 +79,12 @@ trap "killjobs" INT TERM EXIT
 
 # In the background, watch for updates to the markdown, and convert to HTML again
 # We need to run inotifywait on two event types:
-#   1. close_write (as is done when directly modifying the file)
-#   2. moved_to (as is done by Vi-style write-new-then-move-to-overwrite)
+#   1. close_write (as is done by things that directly modify the file)
+#   2. moved_to (as is done by Emacs/Vi-style write-new-then-move-to-overwrite)
 # After (2), a watch on the file will no longer work, since it has been replaced
 # by a new, different file of the same name. Hence we need to set up a watch on
 # the parent directory of the markdown file, and then filter the resulting events
-# for the markdown filename.
+# for the filename we are watching.
 parentdir=$(dirname "$in")
 inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $parentdir \
 | while IFS=/ read -r events file; do
@@ -97,7 +97,7 @@ inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $par
 done &
 
 # Open a window to view the generated HTML, and block here until it exits.
-# Firefox & Chroms don't re-render a local html file when it changes. Nor can
+# Firefox & Chrome don't re-render a local html file when it changes. Nor can
 # they be instructed to poll it by callers re-opening the same file in an
 # existing tab. Hence, we use an HTML viewer that does automatically update
 # when the HTML is modified. (ie. Gnome Web (aka epiphany), or Falkon) To avoid
