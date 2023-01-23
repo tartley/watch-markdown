@@ -32,7 +32,7 @@
 #
 # TODO: Turn off set -x
 
-set -e -x
+set -e # -x
 
 [[ -n "$1" ]] || {
     echo "ERROR: No markdown filename given" >&2
@@ -67,8 +67,7 @@ convert
 
 # When we exit (ie when the html viewer below exits), kill our background processes.
 function killjobs {
-    jobs -p >&2 # debugging
-    jobs -p | xargs -i kill {}
+    jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" >&2
 }
 trap "killjobs" INT TERM EXIT
 
