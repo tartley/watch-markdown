@@ -7,8 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: Add a README
-#
 # TODO: Does our 'trap' need /bin/kill, or will just 'kill' builtin work, now
 # that we no longer try to kill 0, negative PID/PG numbers, etc.
 #
