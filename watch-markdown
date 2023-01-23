@@ -7,9 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: Does our 'trap' need /bin/kill, or will just 'kill' builtin work, now
-# that we no longer try to kill 0, negative PID/PG numbers, etc.
-#
 # TODO: What happens if I skip my explicit error checks on the given markdown
 # file, and just pass it to pandoc? Does it produce equivalent (or better?)
 # error messages for me?
@@ -71,7 +68,7 @@ convert
 # When we exit (ie when the html viewer below exits), kill our background processes.
 function killjobs {
     jobs -p >&2 # debugging
-    jobs -p | xargs -i /bin/kill {}
+    jobs -p | xargs -i kill {}
 }
 trap "killjobs" INT TERM EXIT
 
