@@ -7,8 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: reinstate my customizations to github.css.
-#
 # TODO: Do we even need the watch-markdown-gui wrapper? Adding it did not fix
 # the leftover processes problem (a correct 'trap' cleanup fixed that.)
 #
