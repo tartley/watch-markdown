@@ -4,7 +4,6 @@
 # since the user may have had them installed already.
 
 rm ~/.local/bin/watch-markdown
-rm ~/.local/bin/watch-markdown-gui
 rm -r ~/.config/watch-markdown
-rm ~/.local/share/applications/watch-markdown-gui.desktop
+rm ~/.local/share/applications/watch-markdown.desktop
 
