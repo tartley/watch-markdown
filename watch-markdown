@@ -69,7 +69,13 @@ fi
 function convert {
     # Convert the given markdown file to an HTML file
     css="$HOME/.config/watch-markdown/github.css"
-    pandoc --standalone -c "$css" "$in" -o "$out"
+    set +e
+    output=$(pandoc --standalone -c "$css" "$in" -o "$out" 2>&1)
+    exitval=$?
+    set -e
+    if [[ $exitval -ne 0 ]] ; then
+        error "$exitval" "watch-markdown ERROR" "$output"
+    fi
 }
 
 convert
