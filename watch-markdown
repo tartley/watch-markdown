@@ -17,7 +17,7 @@
 #
 # TODO: Package up for end user installs. As a snap?
 
-set -e # errors terminate the script
+set -eu # errors terminate the script. Unset variables are errors.
 # set -x # print debugging output of every executed command
 
 if [ "$#" -eq 0 ]; then
