@@ -31,9 +31,10 @@ fi
 
 in="$1"
 
-# Output to a tmp filename which is human-readably related to the full pathname
-# of the input file it is derived from (but converting slashes to make a valid
-# filename)
+# Output to a file in /tmp. We want to use the existence of this file as a
+# mutex, to prevent multiple instances running on the same input file. For ease
+# of diagnosis, use a filename that is a human-readable transform of the input
+# file's full pathname.
 outdir='/tmp/watch-markdown'
 mkdir -p "$outdir"
 out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
