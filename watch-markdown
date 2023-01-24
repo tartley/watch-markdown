@@ -62,7 +62,7 @@ function killjobs {
     # watch-markdown is killed with Ctrl-C.
     jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" | :
     # Clean up our output file
-    rm "$out" >&2
+    rm -f "$out" >&2
 }
 trap "killjobs" INT TERM EXIT
 
