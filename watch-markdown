@@ -7,9 +7,10 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: Can we display our other error messages as notify-sends?
-# TODO: Can we forward error responses from pandoc to notify-sends?
-# TODO: Can we forward error responses from other 3rd party progs to notify-sends?
+# TODO: Consider splitting out watch-markdown-gui wrapper again, to handle
+# forwarding stderr to notify-send on error. That means that truly all our
+# error messages (e.g. from konsole, or other random subprocesses) would be
+# displayed in GUI on an error.
 #
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
@@ -27,8 +28,8 @@ set -e # Errors terminate the script.
 
 function error {
     exitval="$1"
-    title="$2"
-    message="$3"
+    message="$2"
+    title="Watch-Markdown Error"
     # If we are connected to a terminal...
     if [ -t 1 ]; then
         # ...use it.
@@ -42,10 +43,10 @@ function error {
 }
 
 if [ "$#" -eq 0 ]; then
-    error 1 "watch-markdown ERROR" "No markdown filename given"
+    error 1 "No markdown filename given"
 fi
 if [ "$#" -gt 1 ]; then
-    error 1 "watch-markdown ERROR" "More than one markdown filename given"
+    error 1 "More than one markdown filename given"
 fi
 
 in="$1"
@@ -63,7 +64,7 @@ out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 # file, so anything else we might do to write to this output would be redundant
 # and possibly harmful.
 if [ -f "$out" ]; then
-    error 2 "watch-markdown ERROR" "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
+    error 2 "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
 fi
 
 function convert {
@@ -74,7 +75,7 @@ function convert {
     exitval=$?
     set -e
     if [[ $exitval -ne 0 ]] ; then
-        error "$exitval" "watch-markdown ERROR" "$output"
+        error "$exitval" "$output"
     fi
 }
 
