@@ -2,7 +2,7 @@
 
 set -e
 
-sudo apt install -y inotify-tools falkon pandoc
+sudo apt install -y inotify-tools libnotify-bin falkon pandoc
 
 (
     this_dir=$(pwd)

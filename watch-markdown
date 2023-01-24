@@ -7,6 +7,10 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
+# TODO: Can we display our other error messages as notify-sends?
+# TODO: Can we forward error responses from pandoc to notify-sends?
+# TODO: Can we forward error responses from other 3rd party progs to notify-sends?
+#
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
 # TODO: Also handle a conversion for which we need a different viewer app.
@@ -19,6 +23,20 @@
 
 set -eu # errors terminate the script. Unset variables are errors.
 # set -x # print debugging output of every executed command
+
+function error {
+    title="$1"
+    message="$2"
+    # If we are connected to a terminal...
+    if [ -t 1 ]; then
+        # ...use it.
+        echo "$title: $message" >&2
+    else
+        # Otherwise, use a system notification popup.
+        # notify-send requires single backslashes to be doubled.
+        notify-send "$title" "$(echo "$message" | sed 's/\\/\\\\/g')"
+    fi
+}
 
 if [ "$#" -eq 0 ]; then
     echo "watch-markdown: ERROR: No markdown filename given" >&2
@@ -44,7 +62,7 @@ out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 # file, so anything else we might do to write to this output would be redundant
 # and possibly harmful.
 if [ -f "$out" ]; then
-    echo "watch-markdown: ERROR: Output file already exists, is watch-markdown already running on this input? '$out'" >&2
+    error "watch-markdown ERROR" "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
     exit 2
 fi
 
