@@ -21,7 +21,8 @@
 #
 # TODO: Package up for end user installs. As a snap?
 
-set -eu # errors terminate the script. Unset variables are errors.
+set -e # Errors terminate the script.
+# set -u # Unset variables are errors.
 # set -x # print debugging output of every executed command
 
 function error {
