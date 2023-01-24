@@ -9,8 +9,8 @@
 
 # TODO: Consider splitting out watch-markdown-gui wrapper again, to handle
 # forwarding stderr to notify-send on error. That means that truly all our
-# error messages (e.g. from konsole, or other random subprocesses) would be
-# displayed in GUI on an error.
+# error messages (e.g. from falkon, or other random subprocesses) would be
+# displayed in a GUI notification on error.
 #
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
