@@ -26,8 +26,9 @@ set -e # Errors terminate the script.
 # set -x # print debugging output of every executed command
 
 function error {
-    title="$1"
-    message="$2"
+    exitval="$1"
+    title="$2"
+    message="$3"
     # If we are connected to a terminal...
     if [ -t 1 ]; then
         # ...use it.
@@ -37,15 +38,14 @@ function error {
         # notify-send requires single backslashes to be doubled.
         notify-send "$title" "$(echo "$message" | sed 's/\\/\\\\/g')"
     fi
+    exit "$1"
 }
 
 if [ "$#" -eq 0 ]; then
-    echo "watch-markdown: ERROR: No markdown filename given" >&2
-    exit 1
+    error 1 "watch-markdown ERROR" "No markdown filename given"
 fi
 if [ "$#" -gt 1 ]; then
-    echo "watch-markdown: ERROR: More than one markdown filename given" >&2
-    exit 1
+    error 1 "watch-markdown ERROR" "More than one markdown filename given"
 fi
 
 in="$1"
@@ -63,8 +63,7 @@ out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 # file, so anything else we might do to write to this output would be redundant
 # and possibly harmful.
 if [ -f "$out" ]; then
-    error "watch-markdown ERROR" "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
-    exit 2
+    error 2 "watch-markdown ERROR" "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
 fi
 
 function convert {
