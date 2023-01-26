@@ -7,11 +7,6 @@
 # Watch for modifications to the Markdown file. If any occur, regenerate the
 # HTML file.
 
-# TODO: Consider splitting out watch-markdown-gui wrapper again, to handle
-# forwarding stderr to notify-send on error. That means that truly all our
-# error messages (e.g. from falkon, or other random subprocesses) would be
-# displayed in a GUI notification on error.
-#
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
 # TODO: Also handle a conversion for which we need a different viewer app.
@@ -29,40 +24,34 @@ set -e # Errors terminate the script.
 function error {
     exitval="$1"
     message="$2"
-    title="Watch-Markdown Error"
-    # If we are connected to a terminal...
-    if [ -t 1 ]; then
-        # ...use it.
-        echo "$title: $message" >&2
-    else
-        # Otherwise, use a system notification popup.
-        # notify-send requires single backslashes to be doubled.
-        notify-send "$title" "$(echo "$message" | sed 's/\\/\\\\/g')"
-    fi
-    exit "$1"
+    echo "$message" >&2
+    exit "$exitval"
 }
 
 if [ "$#" -eq 0 ]; then
-    error 1 "No markdown filename given"
+    error 1 "No filename given."
 fi
 if [ "$#" -gt 1 ]; then
-    error 1 "More than one markdown filename given"
+    error 1 ">1 filenames given."
 fi
 
 in="$1"
 
-# Output to a file in /tmp. We want to use the existence of this file as a
-# mutex, to prevent multiple instances running on the same input file. For ease
-# of diagnosis, use a filename that is a human-readable transform of the input
-# file's full pathname.
+# Output to a file in /tmp. For transparency, use a filename that is an
+# easily human-readable transform of the input file's full pathname,
+# after resolving all symlinks.
 outdir='/tmp/watch-markdown'
 mkdir -p "$outdir"
 out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 
-# Exit if a file exists at our proposed output location. We infer this means
-# another instance of watch-markdown is already running on the given input
-# file, so anything else we might do to write to this output would be redundant
-# and possibly harmful.
+# If another instance were already running on our input file, any writes we
+# make to our output file would be redundant, and possibly harmful. The
+# construction of $out above means that any two instances of watch-markdown
+# which are running on the same underlying input file, no matter whether they
+# were invoked using absolute or relative paths, or symlinks, will produce the
+# same output filename. We can therefore use the existence of this output file
+# as a mutex, to prevent multiple instances running on the same input file. So
+# if our proposed output file already exists, we exit.
 if [ -f "$out" ]; then
     error 2 "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
 fi
@@ -70,13 +59,7 @@ fi
 function convert {
     # Convert the given markdown file to an HTML file
     css="$HOME/.config/watch-markdown/style.css"
-    set +e
-    output=$(pandoc --standalone -c "$css" "$in" -o "$out" 2>&1)
-    exitval=$?
-    set -e
-    if [[ $exitval -ne 0 ]] ; then
-        error "$exitval" "$output"
-    fi
+    pandoc --standalone -c "$css" "$in" -o "$out"
 }
 
 convert
@@ -87,7 +70,7 @@ function killjobs {
     # watch-markdown is killed with Ctrl-C.
     jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" | :
     # Clean up our output file
-    rm -f "$out" >&2
+    rm -f "$out"
 }
 trap "killjobs" INT TERM EXIT
 

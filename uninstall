@@ -6,8 +6,8 @@ set -e
 # but don't automatically remove them since the user may have had them
 # installed beforehand.
 
-rm ~/.local/bin/watch-markdown
-rm ~/.local/bin/watch-markdown-gui
-rm -r ~/.config/watch-markdown
-rm ~/.local/share/applications/watch-markdown-gui.desktop
+rm -f ~/.local/bin/watch-markdown
+rm -f ~/.local/bin/watch-markdown-gui
+rm -fr ~/.config/watch-markdown
+rm -f ~/.local/share/applications/watch-markdown-gui.desktop
 

@@ -2,7 +2,7 @@
 
 set -e
 
-sudo apt install -y inotify-tools libnotify-bin falkon pandoc
+sudo apt install -y inotify-tools falkon pandoc
 
 (
     this_dir=$(pwd)
@@ -16,3 +16,4 @@ mkdir -p "$config"
 cp style.css "$config"
 
 desktop-file-install --dir="$HOME/.local/share/applications/" watch-markdown-gui.desktop
+
