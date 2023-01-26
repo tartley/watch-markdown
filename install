@@ -8,10 +8,11 @@ sudo apt install -y inotify-tools libnotify-bin falkon pandoc
     this_dir=$(pwd)
     cd "$HOME/.local/bin"
     ln -sf "$this_dir/watch-markdown" .
+    ln -sf "$this_dir/watch-markdown-gui" .
 )
 
 config="$HOME/.config/watch-markdown"
 mkdir -p "$config"
 cp style.css "$config"
 
-desktop-file-install --dir="$HOME/.local/share/applications/" watch-markdown.desktop
+desktop-file-install --dir="$HOME/.local/share/applications/" watch-markdown-gui.desktop

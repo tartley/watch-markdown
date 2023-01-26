@@ -7,6 +7,7 @@ set -e
 # installed beforehand.
 
 rm ~/.local/bin/watch-markdown
+rm ~/.local/bin/watch-markdown-gui
 rm -r ~/.config/watch-markdown
-rm ~/.local/share/applications/watch-markdown.desktop
+rm ~/.local/share/applications/watch-markdown-gui.desktop
 
