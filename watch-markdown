@@ -62,13 +62,13 @@ if [ -f "$out" ]; then
     error 2 "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
 fi
 
-function convert {
+function generate_html_file {
     # Convert the given markdown file to an HTML file
     css="$HOME/.config/watch-markdown/style.css"
     pandoc --standalone -c "$css" "$in" -o "$out"
 }
 
-convert
+generate_html_file
 
 # When we exit (ie when the html viewer below exits), kill our background processes.
 function killjobs {
@@ -95,8 +95,7 @@ inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $par
     actual=$(realpath $parentdir/$file)
     expected=$(realpath $in)
     if [ "$actual" = "$expected" ]; then
-        # Regenerate the HTML file again.
-        convert
+        generate_html_file
     fi
 done &
 
