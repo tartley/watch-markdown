@@ -70,15 +70,17 @@ function generate_html_file {
 
 generate_html_file
 
-# When we exit (ie when the html viewer below exits), kill our background processes.
-function killjobs {
-    # Silence expected 'no such process' errors when a terminal invocation of
-    # watch-markdown is killed with Ctrl-C.
+# Cleanup on exit (ie when the HTML viewer at the end of this script exits)
+function cleanup {
+    # Kill our child processes.
+    # The 'grep' silences puzzling but apparently harmless 'no such process'
+    # errors when a terminal invocation of watch-markdown is killed with
+    # Ctrl-C.
     jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" | :
     # Clean up our output file
     rm -f "$out"
 }
-trap "killjobs" INT TERM EXIT
+trap "cleanup" INT TERM EXIT
 
 # Start a background process to watch for updates to the markdown. To do this,
 # we need to run inotifywait on two event types:
