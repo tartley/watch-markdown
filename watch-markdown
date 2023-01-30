@@ -2,14 +2,20 @@
 
 # Usage: watch-markdown <Markdown-file>
 #
-# Convert <markdown-file> to an HTML file. Open the HTML in Falkon, which has
-# the nice property that if the HTML is subsequently modified, it auto-updates.
-# Watch for modifications to the Markdown file. If any occur, regenerate the
-# HTML file.
+# Convert <markdown-file> to an HTML file. In the background, watch for
+# modifications to the Markdown file. If any occur, regenerate the HTML file.
+# Open the HTML in Falkon, which has the nice property that if the HTML is
+# subsequently modified, it auto-updates.
+#
+# This means you can double click a markdown file in the GUI, and get a window
+# displaying the markdown rendered as HTML. As you edit the markdown in your
+# favorite editor, each time you hit 'save', the rendered HTML automatically
+# updates.
 
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
 #
 # TODO: Also handle a conversion for which we need a different viewer app.
+#       dot -> svg?
 #
 # TODO: Let user add config for any combo of:
 #   * command to convert source (eg Markdown) to target (eg HTML) file, and
