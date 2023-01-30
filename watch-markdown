@@ -12,15 +12,16 @@
 # favorite editor, each time you hit 'save', the rendered HTML automatically
 # updates.
 
+# TODO: Check issues/comments/fixes on rerun2 repo
+# TODO: put ideas from watch-marchdown into rerun2?
+# TODO: watch-markdown should *use* (an improved?) rerun2?
+# TODO: How does improved/reused rerun2 affect the following ideas about configuring
+#       alternate uses?
+# TODO: Also handle dot->svg.
 # TODO: Also handle rst->html. (Which presumably pandoc handles too.)
-#
-# TODO: Also handle a conversion for which we need a different viewer app.
-#       dot -> svg?
-#
 # TODO: Let user add config for any combo of:
 #   * command to convert source (eg Markdown) to target (eg HTML) file, and
-#   * viewer (eg browser) for target file (eg HTML)
-#
+#   * viewer (eg browser) for target file.
 # TODO: Package up for end user installs. As a snap?
 
 set -e # Errors terminate the script.
