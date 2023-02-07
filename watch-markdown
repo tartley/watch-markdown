@@ -12,9 +12,12 @@
 # favorite editor, each time you hit 'save', the rendered HTML automatically
 # updates.
 
+# TODO: How does pandoc deal with preamble in the markdown,
+#       like that used by Nikola for tartley.com?
 # TODO: Check issues/comments/fixes on rerun2 repo
 # TODO: put ideas from watch-marchdown into rerun2?
-# TODO: watch-markdown should *use* (an improved?) rerun2?
+# TODO: watch-markdown should *use* (an improved?) rerun2? (But rerun2 watches
+#       everything, while we watch one specific file. Maybe they aren't the same)
 # TODO: How does improved/reused rerun2 affect the following ideas about configuring
 #       alternate uses?
 # TODO: Also handle dot->svg.
