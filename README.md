@@ -1,14 +1,36 @@
-# watch-markdown
+---
+title: Watch Markdown
+---
 
-A small Bash script which combines existing applications to provide a live HTML
-preview of Markdown as you edit it.
+A small Bash script which combines existing applications to display a given
+Markdown file rendered as HTML, and auto-update that display if the Markdown is
+modified.
 
-When run on a given markdown file, converts the markdown to an HTML file, using
-Pandoc. Open the HTML, using Falkon. This is a lightweight HTML browser which
+## Usage
+
+```bash
+watch-markdown OPTIONS FILENAME
+```
+
+Where:
+
+Option     | Description
+-----------|----------------------
+-h \| --help | Display this help.
+
+and `FILENAME` is the name of a Markdown input file.
+
+## Description
+
+When run on a markdown file, convert the markdown to an HTML file in /tmp,
+using Pandoc. Launch a background process that watches the markdown file, using
+inotifywait, and regenerates the HTML if the markdown is modified. Open the
+HTML, using Falkon (aka Gnome Web). This is a lightweight HTML browser which
 has the nice property that it automatically updates if the HTML file is
-subsequently modified. Then launch a background process that watches the
-markdown file, using inotifywait, and regenerates the HTML if the markdown is
-modified. The background process is killed when the HTML viewer is closed.
+modified.
+
+When the HTML viewer app is closed, delete the HTML file, kill our background
+process, and exit.
 
 This means you can double-click the markdown file to view it as HTML, while you
 edit it in your favorite editor. Whenever you hit 'save', the HTML viewer

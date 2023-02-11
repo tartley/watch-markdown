@@ -1,51 +1,106 @@
 #!/usr/bin/env bash
 
-# Usage: watch-markdown <Markdown-file>
-#
-# Convert <markdown-file> to an HTML file. In the background, watch for
-# modifications to the Markdown file. If any occur, regenerate the HTML file.
-# Open the HTML in Falkon, which has the nice property that if the HTML is
-# subsequently modified, it auto-updates.
-#
-# This means you can double click a markdown file in the GUI, and get a window
-# displaying the markdown rendered as HTML. As you edit the markdown in your
-# favorite editor, each time you hit 'save', the rendered HTML automatically
-# updates.
+# Usage: watch-markdown <Markdown-file> (see 'usage' & 'help' below)
 
-# TODO: How does pandoc deal with preamble in the markdown,
-#       like that used by Nikola for tartley.com?
+# TODO: How does pandoc deal with preamble in the markdown, like that used by
+#       Nikola for tartley.com? Preview: Probably really well: It reads YAML
+#       metadata delimited by '---' breaks.
 # TODO: Check issues/comments/fixes on rerun2 repo
-# TODO: put ideas from watch-marchdown into rerun2?
+# TODO: put ideas from watch-marchdown into rerun2? esp. which event types to watch,
+#       and maybe filtering for the wanted filename. Currently I suspect rerun2 only
+#       works by accident, because we watch everything, including the parent directory,
+#       and hence still get events even after the original watched file is replaced
+#       on Vim saving's write-move dance. See next item:
 # TODO: watch-markdown should *use* (an improved?) rerun2? (But rerun2 watches
 #       everything, while we watch one specific file. Maybe they aren't the same)
-# TODO: How does improved/reused rerun2 affect the following ideas about configuring
-#       alternate uses?
+#       Or maybe rerun2 needs to take cmdline args telling it what to watch, so it
+#       can either watch one file, making it useful for us, or watch all *.py files
+#       in a tree, or watch all files except explicitly ignored ones (again, which
+#       can be specified using globs, and be recursive.) This sounds right, actually.
+# TODO: And configurable conversion from one file format to another needs to be pulled
+#       out of this script. So it becomes a one-shot conversion script, which acts like
+#       'markdown2html', but configurable for filetypes. It should:
+#       * Read from stdin if no input file is named
+#       * Output to stdout if no output file is given.
+#       Then this script reduces to just invoking 'rerun2' on 'conversion', and opening
+#       the viewer. This sounds right. (Beware imagemagik has a script called 'convert')
+# TODO: Should configuration of output filetype viewer be tied to the conversion?
+#       I'm beginning to think not. It should depend on output filetype, not input type.
+#       Beware we don't want to build something that badly mimics the desktop's existing
+#       file type associations to view different file types. But on the other hand, we
+#       don't want to force users to make weird default choices for viewing things like
+#       html files just because the weird viewer refreshes on updates. Hmmmm.
+# TODO: Also handle rst->html. (Which pandoc handles with a simple '--from=rst')
 # TODO: Also handle dot->svg.
-# TODO: Also handle rst->html. (Which presumably pandoc handles too.)
-# TODO: Let user add config for any combo of:
-#   * command to convert source (eg Markdown) to target (eg HTML) file, and
-#   * viewer (eg browser) for target file.
+# TODO: Provide a set of default configurations for common file types, consisting of:
+#       * command to convert source (eg Markdown) to target (eg HTML) file, and
+#       * viewer (eg browser) for target file.
+# TODO: Let user add their own custom configurations, that let them handle their own
+#       filetypes, or override built-in ones.
+# TODO: cmdline arg to list currently available configs
 # TODO: Package up for end user installs. As a snap?
 
 set -e # Errors terminate the script.
 # set -u # Unset variables are errors.
 # set -x # print debugging output of every executed command
 
+usage="\
+Usage:
+    watch-markdown OPTIONS FILENAME
+OPTIONS may include:
+    -h|--help  Display this help.
+and FILENAME is the name of a Markdown input file.
+"
+
+help="\
+Convert input markdown file FILENAME into an HTML file in /tmp. In the
+background, regenerate the HTML on changes to FILENAME. Meanwhile, open the
+'falkon' application (aka Gnome Web) to view the HTML. This has the nice
+property that it auto-refreshes if the HTML file changes. When the HTML viewer
+application is closed, delete the HTML file, kill our background process, and
+exit.
+
+This means you can run watch-markdown from the command-line, or by
+double-clicking on a markdown file in the GUI, and get a window displaying the
+markdown rendered as HTML. If you edit the markdown in your favorite editor,
+the displayed HTML auto-updates every time you hit save.
+"
+
 function error {
-    exitval="$1"
-    message="$2"
-    echo "$message" >&2
-    exit "$exitval"
+    echo "$@" >&2
 }
 
-if [ "$#" -eq 0 ]; then
-    error 1 "No filename given."
+# Command line args
+
+# accumulate 'input file' args here
+infiles=()
+unrecognized=()
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help) echo -e "$usage\n$help"; exit;;
+        --example) example=$2; shift;;
+        -*) unrecognized+=( "$1" );;
+        *) infiles+=( "$1" );;
+    esac
+    shift
+done
+
+if [ "${#unrecognized[@]}" -gt 0 ]; then
+    error "Unrecognized args: ${unrecognized[@]}"
+    echo "$usage" >&2
+    exit 1
 fi
-if [ "$#" -gt 1 ]; then
-    error 1 ">1 filenames given."
+if [ ${#infiles[@]} -eq 0 ]; then
+    error "No filename given."
+    exit 1
+fi
+if [ ${#infiles[@]} -gt 1 ]; then
+    error "Can only take 1 filename, got ${#infiles[@]}: ${infiles[@]}"
+    exit 1
 fi
 
-in="$1"
+in="${infiles[0]}"
 
 # Output to a file in /tmp. For transparency, use a filename that is an
 # easily human-readable transform of the input file's full pathname,
@@ -63,7 +118,8 @@ out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
 # as a mutex, to prevent multiple instances running on the same input file. So
 # if our proposed output file already exists, we exit.
 if [ -f "$out" ]; then
-    error 2 "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
+    error "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
+    exit 2
 fi
 
 function generate_html_file {
