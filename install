@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+# This how I install watch-markdown on Pop!_OS 22.04 (derived from Ubuntu 22.04).
+
 set -e
 
-sudo apt install -y inotify-tools falkon pandoc
+sudo apt install -y entr falkon pandoc
 
 (
     this_dir=$(pwd)

@@ -2,9 +2,8 @@
 title: Watch Markdown
 ---
 
-A small Bash script which combines existing applications to display a given
-Markdown file rendered as HTML, and auto-update that display if the Markdown is
-modified.
+Displays the given markdown file rendered as HTML, and auto-update that display
+if the markdown is modified.
 
 ## Usage
 
@@ -14,8 +13,8 @@ watch-markdown OPTIONS FILENAME
 
 Where:
 
-Option     | Description
------------|----------------------
+Option       | Description
+-------------|----------------------
 -h \| --help | Display this help.
 
 and `FILENAME` is the name of a Markdown input file.

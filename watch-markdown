@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 
 # Usage: watch-markdown <Markdown-file> (see 'usage' & 'help' below)
-
-# TODO: How does pandoc deal with preamble in the markdown, like that used by
-#       Nikola for tartley.com? Preview: Probably really well: It reads YAML
-#       metadata delimited by '---' breaks.
-# TODO: Check issues/comments/fixes on rerun2 repo
-# TODO: put ideas from watch-marchdown into rerun2? esp. which event types to watch,
-#       and maybe filtering for the wanted filename. Currently I suspect rerun2 only
-#       works by accident, because we watch everything, including the parent directory,
-#       and hence still get events even after the original watched file is replaced
-#       on Vim saving's write-move dance. See next item:
-# TODO: watch-markdown should *use* (an improved?) rerun2? (But rerun2 watches
-#       everything, while we watch one specific file. Maybe they aren't the same)
-#       Or maybe rerun2 needs to take cmdline args telling it what to watch, so it
-#       can either watch one file, making it useful for us, or watch all *.py files
-#       in a tree, or watch all files except explicitly ignored ones (again, which
-#       can be specified using globs, and be recursive.) This sounds right, actually.
+#
+# TODO: we should use 'entr' instead of 'rerun2':
+#       * By default it watches a single file, which is exactly what we want, and
+#         rerun2 needs modification to support that.
+#       * It reduces code/complexity in our script
+#       * A lot more effort has gone into it than rerun2, we should trust it, presumably.
+#       DONE: Is code complete
+#       DONE: PROBLEM: terminal borked after running ('stty sane' recovers it)
+#             SOLUTION: use `entr -n`, which I don't 100% understand, but it works.
+#       DONE: error message from entr when markdown file is updated: 'file not found'
+#             SOLUTION: I was passing the whole pandoc command line as a single string,
+#             which was being used as the name of an executable. We need to pass
+#             each item as a separate arg.
+#       TODO: Cannot get quoting right to make this work on file with spaces in
+#             the name. Possibly this never worked with the previous 'inotifywait'
+#             implementation either.
+#             Possibly related: https://stackoverflow.com/a/10836225
+#       IDEA: Is this because README.md is transiently missing during Vim's save dance?
+# TODO: Did I over-zealously remove from the github.css some border, background of
+#       notes?
 # TODO: And configurable conversion from one file format to another needs to be pulled
 #       out of this script. So it becomes a one-shot conversion script, which acts like
 #       'markdown2html', but configurable for filetypes. It should:
@@ -102,69 +106,44 @@ fi
 
 in="${infiles[0]}"
 
-# Output to a file in /tmp. For transparency, use a filename that is an
-# easily human-readable transform of the input file's full pathname,
-# after resolving all symlinks.
+# Output to a file in /tmp.
 outdir='/tmp/watch-markdown'
 mkdir -p "$outdir"
-out="$outdir/$(realpath ${in%.md}.html | tr '/' '\\')"
-
-# If another instance were already running on our input file, any writes we
-# make to our output file would be redundant, and possibly harmful. The
-# construction of $out above means that any two instances of watch-markdown
-# which are running on the same underlying input file, no matter whether they
-# were invoked using absolute or relative paths, or symlinks, will produce the
-# same output filename. We can therefore use the existence of this output file
-# as a mutex, to prevent multiple instances running on the same input file. So
-# if our proposed output file already exists, we exit.
+# The output file is not expected to be useful to end-users. Make the output
+# filename depend on the full input pathname, resolving symlinks so that any
+# two instances of this script running on the same input file (whether using
+# relative or absolute filenames, or symlinks) will generate the same output
+# file name. For ease of debugging, use a filename that is an easily
+# human-readable transform of the input file's full pathname.
+out="$outdir/$(realpath "${in%.md}.html" | tr '/' '-')"
+# We can use the existence of the output file as a mutex, to prevent multiple
+# instances of this script from running simultaneously on the same input, which
+# would be needless and possibly destructive.
 if [ -f "$out" ]; then
     error "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
     exit 2
 fi
 
-function generate_html_file {
-    # Convert the given markdown file to an HTML file
-    css="$HOME/.config/watch-markdown/style.css"
-    pandoc --standalone -c "$css" "$in" -o "$out"
-}
-
-generate_html_file
-
 # Cleanup on exit (ie when the HTML viewer at the end of this script exits)
 function cleanup {
     # Kill our child processes.
-    # The 'grep' silences puzzling but apparently harmless 'no such process'
-    # errors when a terminal invocation of watch-markdown is killed with
-    # Ctrl-C.
-    jobs -p | xargs -i kill {} 2>&1 | grep -v "No such process" | :
+    kill $(ps -o pid= --ppid $$) 2>&1 | grep -v "No such process" >&2 || :
     # Clean up our output file
     rm -f "$out"
 }
 trap "cleanup" INT TERM EXIT
 
-# Start a background process to watch for updates to the markdown. To do this,
-# we need to run inotifywait on two event types:
-#   1. close_write (as is done by things that directly modify the file)
-#   2. moved_to (as is done by Emacs/Vi-style write-new-then-move-to-overwrite)
-# After (2), a watch on the file will no longer work, since it has been replaced
-# by a new, different file of the same name. Hence we need to set up a watch on
-# the parent directory, and then filter the resulting events for the filename we
-# are watching.
-parentdir=$(dirname "$in")
-inotifywait --quiet --monitor --event close_write,moved_to --format "%e/%f" $parentdir \
-| while IFS=/ read -r events file; do
-    # If the event is for the markdown file we are watching
-    actual=$(realpath $parentdir/$file)
-    expected=$(realpath $in)
-    if [ "$actual" = "$expected" ]; then
-        generate_html_file
-    fi
-done &
+# Generate the command to convert our input file to our output file
+css="$HOME/.config/watch-markdown/style.css"
+printf -v convert_command "pandoc --standalone -c %q %q -o %q\n" "$css" "$in" "$out"
+
+# Start a background process to watch for updates to the markdown.
+echo "$in" | entr -n $convert_command &
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
 # * Re-renders automatically if the HTML file changes. Firefox & Chrome don't
-#   do this, but Gnome Web (aka epiphany), or Falkon do.
+#   do this, but KDE's browser Falkon does (as does Gnome Web, aka epiphany).
 # To avoid the confusing reinstatement of multiple old tabs, we open a
 # --private-browsing session.
 falkon --no-extensions --private-browsing "$out"
