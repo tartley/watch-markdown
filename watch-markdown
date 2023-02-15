@@ -18,7 +18,6 @@
 #             the name. Possibly this never worked with the previous 'inotifywait'
 #             implementation either.
 #             Possibly related: https://stackoverflow.com/a/10836225
-#       IDEA: Is this because README.md is transiently missing during Vim's save dance?
 # TODO: Did I over-zealously remove from the github.css some border, background of
 #       notes?
 # TODO: And configurable conversion from one file format to another needs to be pulled
@@ -45,8 +44,9 @@
 # TODO: Package up for end user installs. As a snap?
 
 set -e # Errors terminate the script.
-# set -u # Unset variables are errors.
+set -u # Unset variables are errors.
 # set -x # print debugging output of every executed command
+set -o pipefail
 
 usage="\
 Usage:
@@ -70,10 +70,6 @@ markdown rendered as HTML. If you edit the markdown in your favorite editor,
 the displayed HTML auto-updates every time you hit save.
 "
 
-function error {
-    echo "$@" >&2
-}
-
 # Command line args
 
 # accumulate 'input file' args here
@@ -82,7 +78,7 @@ unrecognized=()
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        -h|--help) echo -e "$usage\n$help"; exit;;
+        -h|--help) printf "$usage\n$help"; exit;;
         --example) example=$2; shift;;
         -*) unrecognized+=( "$1" );;
         *) infiles+=( "$1" );;
@@ -91,16 +87,16 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "${#unrecognized[@]}" -gt 0 ]; then
-    error "Unrecognized args: ${unrecognized[@]}"
-    echo "$usage" >&2
+    echo >&2 "Unrecognized args: ${unrecognized[@]}"
+    echo >&2 "$usage"
     exit 1
 fi
 if [ ${#infiles[@]} -eq 0 ]; then
-    error "No filename given."
+    echo >&2 "No filename given."
     exit 1
 fi
 if [ ${#infiles[@]} -gt 1 ]; then
-    error "Can only take 1 filename, got ${#infiles[@]}: ${infiles[@]}"
+    echo >&2 "Can only take 1 filename, got ${#infiles[@]}: ${infiles[@]}"
     exit 1
 fi
 
@@ -120,7 +116,7 @@ out="$outdir/$(realpath "${in%.md}.html" | tr '/' '-')"
 # instances of this script from running simultaneously on the same input, which
 # would be needless and possibly destructive.
 if [ -f "$out" ]; then
-    error "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
+    echo >&2 "The output file already exists. Is watch-markdown already running on this input? If not, try deleting the output file: $out"
     exit 2
 fi
 
