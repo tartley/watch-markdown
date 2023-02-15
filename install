@@ -4,13 +4,25 @@
 
 set -e
 
-sudo apt install -y entr falkon pandoc
+sudo apt install -y falkon pandoc
 
 (
     this_dir=$(pwd)
     cd "$HOME/.local/bin"
     ln -sf "$this_dir/watch-markdown" .
     ln -sf "$this_dir/watch-markdown-gui" .
+)
+
+# Install 'entr'. The apt package is from 2021, has problems like -z doesn't work.
+# So install from source.
+(
+    cd /tmp
+    wget http://eradman.com/entrproject/code/entr-5.3.tar.gz
+    tar -xzf entr-5.3.tar.gz
+    cd entr-5.3
+    ./configure
+    sudo make install
+    rm -rf /tmp/entr-5.3*
 )
 
 config="$HOME/.config/watch-markdown"
