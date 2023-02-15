@@ -11,13 +11,11 @@ if the markdown is modified.
 watch-markdown OPTIONS FILENAME
 ```
 
-Where:
+Where `FILENAME` is the name of a Markdown input file, and `OPTIONS` are:
 
-Option       | Description
--------------|----------------------
--h \| --help | Display this help.
-
-and `FILENAME` is the name of a Markdown input file.
+Option           | Description
+-----------------|----------------------
+`-h` \| `--help` | Display this help.
 
 ## Description
 
