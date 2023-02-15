@@ -2,10 +2,14 @@
 
 # Usage: watch-markdown <Markdown-file> (see 'usage' & 'help' below)
 #
-# TODO: we should use 'entr' instead of 'rerun2':
+# DONE: we should use 'entr' instead of 'rerun2':
 #       * By default it watches a single file, which is exactly what we want, and
 #         rerun2 needs modification to support that.
+#       * It also supports flexible specification of which files to watch.
+#       * No added complexity to account for the vim save-elsewhere-then-move-over dance.
+#       * Allows pressing space to trigger an update
 #       * It reduces code/complexity in our script
+#       * Supports modes of operation like restart a long-running process.
 #       * A lot more effort has gone into it than rerun2, we should trust it, presumably.
 #       DONE: Is code complete
 #       DONE: PROBLEM: terminal borked after running ('stty sane' recovers it)
@@ -14,10 +18,12 @@
 #             SOLUTION: I was passing the whole pandoc command line as a single string,
 #             which was being used as the name of an executable. We need to pass
 #             each item as a separate arg.
-#       TODO: Cannot get quoting right to make this work on file with spaces in
+#       DONE: Cannot get quoting right to make this work on file with spaces in
 #             the name. Possibly this never worked with the previous 'inotifywait'
 #             implementation either.
 #             Possibly related: https://stackoverflow.com/a/10836225
+#       TODO: Errors from pandoc are no longer propagated to cmdline exit value
+#             nor to GUI error displayer.
 # TODO: Did I over-zealously remove from the github.css some border, background of
 #       notes?
 # TODO: And configurable conversion from one file format to another needs to be pulled
@@ -131,10 +137,12 @@ trap "cleanup" INT TERM EXIT
 
 # Generate the command to convert our input file to our output file
 css="$HOME/.config/watch-markdown/style.css"
-printf -v convert_command "pandoc --standalone -c %q %q -o %q\n" "$css" "$in" "$out"
+convert_command="pandoc --standalone -c \"$css\" \"$in\" -o \"$out\""
 
-# Start a background process to watch for updates to the markdown.
-echo "$in" | entr -n $convert_command &
+# Convert markdown to HTML, and update whenever the markdown changes
+# We don't really *need* the '-s' param, which gives the command to a new shell,
+# but I couldn't figure out how to quote the command such that it worked without -s.
+echo "$in" | entr -ns "$convert_command" &
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
