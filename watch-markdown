@@ -22,8 +22,32 @@
 #             the name. Possibly this never worked with the previous 'inotifywait'
 #             implementation either.
 #             Possibly related: https://stackoverflow.com/a/10836225
+#       TODO: Decide whether I'd rather use the current 'entr -s" solution,
+#             which passes $cmd as a single arg, and hence is maybe easy to
+#             store in a config file. Or convert to the array-based solution I
+#             posted to stack-overflow. I'm not sure what the advantage of converting
+#             is. It doesn't create an extra process. <shrug> Oh! It doesn't output
+#             the shell exit code to stdout. I don't 100% understand the '-s'
+#             behavior, man page mentions combining with '-r'. Maybe understand
+#             what this is talking about to help me decide whether '-s' is a good
+#             idea for us, especially since we're going to want to detect the
+#             exit value of pandoc next.
 #       TODO: Errors from pandoc are no longer propagated to cmdline exit value
-#             nor to GUI error displayer.
+#             nor to GUI error displayer. Solution to this may be to wait on the
+#             job before we exit but perhaps impossible with background job?
+# TODO: Exit handling. There are three scenarios:
+#       * This script is terminated with Ctrl-C. Both it and its children recieve the
+#         SIGINT signal and exit. So we do not need to explicitly kill our children.
+#       * The user exits falkon. We need to kill our children, which possibly can be
+#         done more simply than currently, using `bbpid=$!` after spawning the job,
+#         and `kill $bbpid` after falkon exits. No trap is needed in this case.
+#       * This script exits due to some other signal. For this case, we need the trap,
+#         but perhaps it can be implemented more simply, using $!.
+#       At the very least, consider documenting this in the script, for my own
+#       later self?
+# TODO: switch back to '\' substitutions in the output filename?
+# TODO: Report a bug in entr's cleanup of stdin handling? Whatever is causing
+#       the invisible typing when I call my script without using `entr -n` ?
 # TODO: Did I over-zealously remove from the github.css some border, background of
 #       notes?
 # TODO: And configurable conversion from one file format to another needs to be pulled
