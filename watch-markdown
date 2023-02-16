@@ -137,12 +137,12 @@ trap "cleanup" INT TERM EXIT
 
 # Generate the command to convert our input file to our output file
 css="$HOME/.config/watch-markdown/style.css"
-convert_command="pandoc --standalone -c \"$css\" \"$in\" -o \"$out\""
+cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 
 # Convert markdown to HTML, and update whenever the markdown changes
 # We don't really *need* the '-s' param, which gives the command to a new shell,
 # but I couldn't figure out how to quote the command such that it worked without -s.
-echo "$in" | entr -s "$convert_command" &
+echo "$in" | entr -s "$cmd" &
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
