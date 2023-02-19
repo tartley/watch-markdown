@@ -4,7 +4,9 @@
 
 set -e
 
-sudo apt install -y falkon pandoc
+if ! ( which falkon && which pandoc ) >/dev/null ; then
+    sudo apt install -y falkon pandoc
+fi
 
 (
     this_dir=$(pwd)
@@ -15,15 +17,18 @@ sudo apt install -y falkon pandoc
 
 # Install 'entr'. The apt package is from 2021, has problems like -z doesn't work.
 # So install from source.
-(
+version="5.3"
+if ! ( which entr >/dev/null && [ "$(entr 2>&1 | grep release | cut -d' ' -f2)" = "$version" ] );  then
+    (
     cd /tmp
-    wget http://eradman.com/entrproject/code/entr-5.3.tar.gz
-    tar -xzf entr-5.3.tar.gz
-    cd entr-5.3
+    wget "http://eradman.com/entrproject/code/entr-${desired}.tar.gz"
+    tar -xzf "entr-${version}.tar.gz"
+    cd "entr-$version"
     ./configure
     sudo make install
-    rm -rf /tmp/entr-5.3*
-)
+    rm -rf "/tmp/entr-${version}*"
+    )
+fi
 
 config="$HOME/.config/watch-markdown"
 mkdir -p "$config"
