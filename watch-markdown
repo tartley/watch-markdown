@@ -35,27 +35,32 @@
 #       TODO: Errors from pandoc are no longer propagated to cmdline exit value
 #             nor to GUI error displayer. Solution to this may be to wait on the
 #             job before we exit but perhaps impossible with background job?
-# TODO: Exit handling. There are three scenarios:
-#       * This script is terminated with Ctrl-C. Both it and its children recieve the
-#         SIGINT signal and exit. So we do not need to explicitly kill our children.
-#       * The user exits falkon. We need to kill our children, which possibly can be
-#         done more simply than currently, using `bbpid=$!` after spawning the job,
-#         and `kill $bbpid` after falkon exits. No trap is needed in this case.
-#       * This script exits due to some other signal. For this case, we need the trap,
-#         but perhaps it can be implemented more simply, using $!.
-#       At the very least, consider documenting this in the script, for my own
-#       later self?
+#             Exit handling. There are three scenarios:
+#             * This script is terminated with Ctrl-C. Both it and its children
+#               recieve the SIGINT signal and exit. So we do not need to
+#               explicitly kill our children.
+#             * The user exits falkon. We need to kill our children, which
+#               possibly can be done more simply than currently, using
+#               `bbpid=$!` after spawning the job, and `kill $bbpid` after
+#               falkon exits. No trap is needed in this case.
+#             * This script exits due to some other signal. For this case, we
+#               need the trap, but perhaps it can be implemented more simply,
+#               using $!. At the very least, consider documenting this in the
+#               script, for my own later self?
 # TODO: switch back to '\' substitutions in the output filename?
 # TODO: Report a bug in entr's cleanup of stdin handling? Whatever is causing
 #       the invisible typing when I call my script without using `entr -n` ?
 # TODO: Did I over-zealously remove from the github.css some border, background of
 #       notes?
+# TODO: Auto-selection of correct command for input filetype. Can identify mime-type
+#       to an extent. But may have to write our own heuristics for detecting markdown.
+#       :-(
 # TODO: And configurable conversion from one file format to another needs to be pulled
 #       out of this script. So it becomes a one-shot conversion script, which acts like
 #       'markdown2html', but configurable for filetypes. It should:
 #       * Read from stdin if no input file is named
 #       * Output to stdout if no output file is given.
-#       Then this script reduces to just invoking 'rerun2' on 'conversion', and opening
+#       Then this script reduces to just invoking 'entr' on 'conversion', and opening
 #       the viewer. This sounds right. (Beware imagemagik has a script called 'convert')
 # TODO: Should configuration of output filetype viewer be tied to the conversion?
 #       I'm beginning to think not. It should depend on output filetype, not input type.
