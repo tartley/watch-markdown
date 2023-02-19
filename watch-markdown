@@ -22,7 +22,7 @@
 #             the name. Possibly this never worked with the previous 'inotifywait'
 #             implementation either.
 #             Possibly related: https://stackoverflow.com/a/10836225
-#       TODO: Decide whether I'd rather use the current 'entr -s" solution,
+#       DONE: Decide whether I'd rather use the current 'entr -s" solution,
 #             which passes $cmd as a single arg, and hence is maybe easy to
 #             store in a config file. Or convert to the array-based solution I
 #             posted to stack-overflow. I'm not sure what the advantage of converting
@@ -32,6 +32,8 @@
 #             what this is talking about to help me decide whether '-s' is a good
 #             idea for us, especially since we're going to want to detect the
 #             exit value of pandoc next.
+#             ANSWER: Use 'entr sh -c "$cmd". Gets us a shell to parse $cmd,
+#             and doesn't output the bash exit value.
 #       TODO: Errors from pandoc are no longer propagated to cmdline exit value
 #             nor to GUI error displayer. Solution to this may be to wait on the
 #             job before we exit but perhaps impossible with background job?
@@ -171,7 +173,7 @@ cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 # Convert markdown to HTML, and update whenever the markdown changes
 # We don't really *need* the '-s' param, which gives the command to a new shell,
 # but I couldn't figure out how to quote the command such that it worked without -s.
-echo "$in" | entr -ns "$cmd" &
+echo "$in" | entr -n "$SHELL" -c "$cmd" &
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
