@@ -158,7 +158,7 @@ if [ -f "$out" ]; then
 fi
 
 # Cleanup on exit (ie when the HTML viewer at the end of this script exits)
-function cleanup {
+cleanup() {
     # Kill our child processes.
     kill $(ps -o pid= --ppid $$) 2>&1 | grep -v "No such process" >&2 || :
     # Clean up our output file
