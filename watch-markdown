@@ -49,6 +49,10 @@
 #               need the trap, but perhaps it can be implemented more simply,
 #               using $!. At the very least, consider documenting this in the
 #               script, for my own later self?
+# TODO: Writing output to /tmp breaks any relative directory links,
+#       such as images in the same dir. We need to write the html to the same dir as
+#       our input file, and have a command-line flag to delete it when we exit.
+#       (leave it by default)
 # TODO: switch back to '\' substitutions in the output filename?
 # TODO: Report a bug in entr's cleanup of stdin handling? Whatever is causing
 #       the invisible typing when I call my script without using `entr -n` ?
@@ -159,9 +163,9 @@ fi
 
 # Cleanup on exit (ie when the HTML viewer at the end of this script exits)
 cleanup() {
-    # Kill our child processes.
-    kill $(ps -o pid= --ppid $$) 2>&1 | grep -v "No such process" >&2 || :
-    # Clean up our output file
+    # Kill the child we spawned to watch for markdown changes
+    kill $jobpid
+    # Remove our output file
     rm -f "$out"
 }
 trap "cleanup" INT TERM EXIT
@@ -170,10 +174,11 @@ trap "cleanup" INT TERM EXIT
 css="$HOME/.config/watch-markdown/style.css"
 cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 
-# Convert markdown to HTML, and update whenever the markdown changes
-# We don't really *need* the '-s' param, which gives the command to a new shell,
-# but I couldn't figure out how to quote the command such that it worked without -s.
+# Convert markdown to HTML, and update whenever the markdown changes. We don't
+# really *need* the '-s' param, which gives $cmd to a new shell, but I couldn't
+# figure out how to quote $cmd such that it worked without a shell to parse it.
 echo "$in" | entr -n "$SHELL" -c "$cmd" &
+jobpid=$!
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
