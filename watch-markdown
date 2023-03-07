@@ -4,7 +4,8 @@
 #
 # TODO: Since switching from rerun to entr, errors from pandoc are no longer
 #       propagated to cmdline exit value, nor to GUI error displayer.
-#       TODO: Why is this exactly?
+#       I theorize this is because entr calls a shell which calls $cmd,
+#       and error exit values aren't propagated back.
 #       Solution to this may be to wait on the
 #       job before we exit but perhaps impossible with background job?
 #       There are three exit handling scenarios to consider:
@@ -148,8 +149,8 @@ fi
 cleanup() {
     # Do all cleanup, even if one step fails
     set +e
-    # Kill the child we spawned to watch for markdown changes
-    kill $jobpid
+    # Kill the child we spawned (the 'entr' command below)
+    kill $childpid
     # Remove our output file
     rm -f "$out"
 }
@@ -165,7 +166,7 @@ cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 # https://stackoverflow.com/questions/75467601/how-to-pass-a-bash-command-to-entr-quoting-to-guard-against-filenames-with-sp
 # I only don't use entr's '-s' arg to avoid the "Bash exit value: x" on stdout.
 echo "$in" | entr -n "$SHELL" -c "$cmd" &
-jobpid=$!
+childpid=$!
 
 # Open a window to view the generated HTML. We want a viewer that:
 # * Runs synchronously, so that this script blocks here until it exits.
