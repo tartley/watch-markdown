@@ -2,53 +2,36 @@
 
 # Usage: watch-markdown <Markdown-file> (see 'usage' & 'help' below)
 #
-# DONE: we should use 'entr' instead of 'rerun2':
-#       * By default it watches a single file, which is exactly what we want, and
-#         rerun2 needs modification to support that.
-#       * It also supports flexible specification of which files to watch.
-#       * No added complexity to account for the vim save-elsewhere-then-move-over dance.
-#       * Allows pressing space to trigger an update
-#       * It reduces code/complexity in our script
-#       * Supports modes of operation like restart a long-running process.
-#       * A lot more effort has gone into it than rerun2, we should trust it, presumably.
-#       DONE: Is code complete
-#       DONE: PROBLEM: terminal borked after running ('stty sane' recovers it)
-#             SOLUTION: use `entr -n`, which I don't 100% understand, but it works.
-#       DONE: error message from entr when markdown file is updated: 'file not found'
-#             SOLUTION: I was passing the whole pandoc command line as a single string,
-#             which was being used as the name of an executable. We need to pass
-#             each item as a separate arg.
-#       DONE: Cannot get quoting right to make this work on file with spaces in
-#             the name. Possibly this never worked with the previous 'inotifywait'
-#             implementation either.
-#             Possibly related: https://stackoverflow.com/a/10836225
-#       DONE: Decide whether I'd rather use the current 'entr -s" solution,
-#             which passes $cmd as a single arg, and hence is maybe easy to
-#             store in a config file. Or convert to the array-based solution I
-#             posted to stack-overflow. I'm not sure what the advantage of converting
-#             is. It doesn't create an extra process. <shrug> Oh! It doesn't output
-#             the shell exit code to stdout. I don't 100% understand the '-s'
-#             behavior, man page mentions combining with '-r'. Maybe understand
-#             what this is talking about to help me decide whether '-s' is a good
-#             idea for us, especially since we're going to want to detect the
-#             exit value of pandoc next.
-#             ANSWER: Use 'entr sh -c "$cmd". Gets us a shell to parse $cmd,
-#             and doesn't output the bash exit value.
-#       TODO: Errors from pandoc are no longer propagated to cmdline exit value
-#             nor to GUI error displayer. Solution to this may be to wait on the
-#             job before we exit but perhaps impossible with background job?
-#             Exit handling. There are three scenarios:
-#             * This script is terminated with Ctrl-C. Both it and its children
-#               recieve the SIGINT signal and exit. So we do not need to
-#               explicitly kill our children.
-#             * The user exits falkon. We need to kill our children, which
-#               possibly can be done more simply than currently, using
-#               `bbpid=$!` after spawning the job, and `kill $bbpid` after
-#               falkon exits. No trap is needed in this case.
-#             * This script exits due to some other signal. For this case, we
-#               need the trap, but perhaps it can be implemented more simply,
-#               using $!. At the very least, consider documenting this in the
-#               script, for my own later self?
+# TODO: Since switching from rerun to entr, errors from pandoc are no longer
+#       propagated to cmdline exit value, nor to GUI error displayer.
+#       TODO: Why is this exactly?
+#       Solution to this may be to wait on the
+#       job before we exit but perhaps impossible with background job?
+#       There are three exit handling scenarios to consider:
+#       * Sunny day: The user exits Falkon, presumably with 0 exit code.
+#         We do not need to kill our children in this case, and do not need
+#         to display any errors.
+#       * This script is terminated with Ctrl-C. Both it and its children
+#         recieve the SIGINT signal and exit. So in this case, the trap does
+#         not need to explicitly kill our children, and their exit value is
+#         presumably known to be 130 (2 for sigint exit, and bash adds 128 to
+#         processes exiting due to a fatal (eg. unhandled) signal.)
+#         Since this is a user-initiated event, I don't think we need to display
+#         any error message.
+#       * Our child exits with a nonzero exit code. This is our buggy case. We need:
+#         * To detect it has happened.
+#         * Retrieve the child's exit code. (Do we really need this? I guess including
+#           it in our error message might be helpful)
+#         * Propagate any stderr from entr or its child to our stderr, so that GUI
+#           error message may be shown.
+#         * No need to kill our children. Maybe the trap needs to guard against
+#           trying to kill a child that has already exited, to prevent causing new
+#           errors that obfusticate the first.
+#         * But we do need the trap to (conditionally) delete our output, as normal.
+#         * Propagate the child exit code. I think the GUI wrapper appends this to the
+#           displayed message.
+#       * This script exits due to some other signal.
+#         I'm not sure what to do about this. For now, nothing then.
 # TODO: Writing output to /tmp breaks any relative directory links,
 #       such as images in the same dir. We need to write the html to the same dir as
 #       our input file, and have a command-line flag to delete it when we exit.
@@ -161,7 +144,7 @@ if [ -f "$out" ]; then
     exit 2
 fi
 
-# Cleanup on exit (ie when the HTML viewer at the end of this script exits)
+# Cleanup on exit (normally when the HTML viewer at the end of this script exits)
 cleanup() {
     # Kill the child we spawned to watch for markdown changes
     kill $jobpid
@@ -174,9 +157,11 @@ trap "cleanup" INT TERM EXIT
 css="$HOME/.config/watch-markdown/style.css"
 cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 
-# Convert markdown to HTML, and update whenever the markdown changes. We don't
-# really *need* the '-s' param, which gives $cmd to a new shell, but I couldn't
-# figure out how to quote $cmd such that it worked without a shell to parse it.
+# Convert markdown to HTML, and update whenever the markdown changes.
+# We don't really *need* the new shell, but without using it to parse $cmd,
+# I couldn't quote $cmd so that it actually worked. Attemps documented at:
+# https://stackoverflow.com/questions/75467601/how-to-pass-a-bash-command-to-entr-quoting-to-guard-against-filenames-with-sp
+# I only don't use entr's '-s' arg to avoid the "Bash exit value: x" on stdout.
 echo "$in" | entr -n "$SHELL" -c "$cmd" &
 jobpid=$!
 
@@ -184,7 +169,7 @@ jobpid=$!
 # * Runs synchronously, so that this script blocks here until it exits.
 # * Re-renders automatically if the HTML file changes. Firefox & Chrome don't
 #   do this, but KDE's browser Falkon does (as does Gnome Web, aka epiphany).
-# To avoid the confusing reinstatement of multiple old tabs, we open a
-# --private-browsing session.
+# --private-browsing to avoid the confusing reinstatement of multiple old tabs.
+# --no-extensions just out of kneejerk conservatism.
 falkon --no-extensions --private-browsing "$out"
 
