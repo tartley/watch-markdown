@@ -146,6 +146,8 @@ fi
 
 # Cleanup on exit (normally when the HTML viewer at the end of this script exits)
 cleanup() {
+    # Do all cleanup, even if one step fails
+    set +e
     # Kill the child we spawned to watch for markdown changes
     kill $jobpid
     # Remove our output file
