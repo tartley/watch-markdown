@@ -10,9 +10,8 @@ fi
 
 (
     this_dir=$(pwd)
-    cd "$HOME/.local/bin"
-    ln -sf "$this_dir/watch-markdown" .
-    ln -sf "$this_dir/watch-markdown-gui" .
+    cp watch-markdown ~/.local/bin
+    cp watch-markdown-gui ~/.local/bin
 )
 
 # Install 'entr'. The apt package is from 2021, has problems like -z doesn't work.
@@ -21,7 +20,7 @@ version="5.3"
 if ! ( which entr >/dev/null && [ "$(entr 2>&1 | grep release | cut -d' ' -f2)" = "$version" ] );  then
     (
     cd /tmp
-    wget "http://eradman.com/entrproject/code/entr-${desired}.tar.gz"
+    wget "http://eradman.com/entrproject/code/entr-${version}.tar.gz"
     tar -xzf "entr-${version}.tar.gz"
     cd "entr-$version"
     ./configure

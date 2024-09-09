@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 # A wrapper for invoking watch-markdown from the Gnome GUI. This exists so that
-# if an error occurs, we send the contents of its stderr to GUI dialog, so the
-# user gets to see an error message even though our stderr is not connected to
-# a terminal.
+# if an error occurs, indicated by a nonzero exit value, we send the contents
+# of its stderr to a GUI dialog. So the user gets to see error messages, even
+# though our stderr is not connected to a terminal.
 
 function show_error {
-    # Use Python to display an error message GUI dialog
+    # Use Python to display a GUI error message dialog.
     title="$1"
     message="$2"
     python3 -c <<EOF \
@@ -19,7 +19,7 @@ EOF
 }
 
 # if watch-markdown's exit value indicates an error
-if ! err_msg="$(watch-markdown "$@" 2>&1 >/dev/null)" ; then
+if ! err_msg="$(watch-markdown --cd "$@" 2>&1 >/dev/null)" ; then
     # Display any error messages
     show_error "Watch Markdown error" "$err_msg"
 fi

@@ -76,21 +76,16 @@ When Falkon first opens, it has toolbars visible for its use as a web browser.
 Personally, I don't use these, so I hide them all from the View menu, and this
 setting persists for future invocations.
 
-## Future plans
+## TODO / Future plans
 
-watch-markdown is an example of a pattern. It quickly wires together existing
-applications to provide a live preview while users edit a file in their
-favorite editor. This pattern is powerful and generic. It stands in opposition
-to the more prevalent practice getting live previews by building dedicated
-applications for each possible file type. Instead of requiring a whole new GUI
-application, the core of watch-markdown remains the same, and a couple of lines
-of config should suffice to handle any new filetype we want. (one to express
-how to convert the filetype into a viewable format like HTML or SVG, and one to
-express how we want to view that format, e.g. in a browser window.)
-
-My intention is to tidy up the wrinkles in this implementation, and then make
-it generic so that it allows users to configure how to convert markdown to
-HTML, and what HTML viewer to use. This should make it possible for it to
-handle more than just Markdown. Live previews should be possible for diverse
-formats, from RST, graphviz files, or running unit tests.
+* Commit current diffs
+* Combine this TODO list with the one in the source
+* Create a simple dedicated html viewer app, to eliminate surplus UI in Falkon?
+* Try out with tartley.com posts, does the metadata preamble break it?
+* Make render and view commands configurable
+* Should that tie in to md2html? Maybe:
+    * md2html defines how to do the transform
+    * watch-markdown configured to call md2html
+* Add a configuration for dot to svg.
+* Add other document transforms.
 

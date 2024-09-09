@@ -5,10 +5,15 @@
 # TODO: Since switching from rerun to entr, errors from pandoc are no longer
 #       propagated to cmdline exit value, nor to GUI error displayer.
 #       I theorize this is because entr calls a shell which calls $cmd,
-#       and error exit values aren't propagated back.
-#       Solution to this may be to wait on the
-#       job before we exit but perhaps impossible with background job?
-#       There are three exit handling scenarios to consider:
+#       and error exit values aren't propagated back. 'man entr' seems
+#       to confirm this: entr does not care about nor propagate cmd exit
+#       values, unless one provides '-z', which exits entr when cmd exits.
+#       Which isn't what I want. Hmmm.
+#       Should I revert to using inotify-wait for this scripted invocation,
+#       and save 'entr' for interactive use, as it was designed for?
+#       Or alternatively, augment 'rerun' to accept names of specific files to
+#       watch?
+#       There are four exit handling scenarios to consider:
 #       * Sunny day: The user exits Falkon, presumably with 0 exit code.
 #         We do not need to kill our children in this case, and do not need
 #         to display any errors.
@@ -16,10 +21,11 @@
 #         recieve the SIGINT signal and exit. So in this case, the trap does
 #         not need to explicitly kill our children, and their exit value is
 #         presumably known to be 130 (2 for sigint exit, and bash adds 128 to
-#         processes exiting due to a fatal (eg. unhandled) signal.)
+#         processes exiting due to a fatal (ie. unhandled) signal.)
 #         Since this is a user-initiated event, I don't think we need to display
 #         any error message.
-#       * Our child exits with a nonzero exit code. This is our buggy case. We need:
+#       * Our child (the html generation command) exits with a nonzero exit
+#         code. This is our buggy case. We need:
 #         * To detect it has happened.
 #         * Retrieve the child's exit code. (Do we really need this? I guess including
 #           it in our error message might be helpful)
@@ -33,10 +39,10 @@
 #           displayed message.
 #       * This script exits due to some other signal.
 #         I'm not sure what to do about this. For now, nothing then.
+#
 # TODO: Writing output to /tmp breaks any relative directory links,
 #       such as images in the same dir. We need to write the html to the same dir as
-#       our input file, and have a command-line flag to delete it when we exit.
-#       (leave it by default)
+#       our input file, and delete it when we're done.
 # TODO: switch back to '\' substitutions in the output filename?
 # TODO: Report a bug in entr's cleanup of stdin handling? Whatever is causing
 #       the invisible typing when I call my script without using `entr -n` ?
@@ -44,7 +50,8 @@
 #       notes?
 # TODO: Auto-selection of correct command for input filetype. Can identify mime-type
 #       to an extent. But may have to write our own heuristics for detecting markdown.
-#       :-(
+#       :-( NO, maybe we can define a markdown MIME type for this purpose:
+#       https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html.en
 # TODO: And configurable conversion from one file format to another needs to be pulled
 #       out of this script. So it becomes a one-shot conversion script, which acts like
 #       'markdown2html', but configurable for filetypes. It should:
@@ -77,6 +84,8 @@ usage="\
 Usage:
     watch-markdown OPTIONS FILENAME
 OPTIONS may include:
+    --cd       Change to the given markdown file's directory,
+               useful for GUI invocation on markdown containing relative paths.
     -h|--help  Display this help.
 and FILENAME is the name of a Markdown input file.
 "
@@ -100,11 +109,12 @@ the displayed HTML auto-updates every time you hit save.
 # accumulate 'input file' args here
 infiles=()
 unrecognized=()
+changedir=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help) printf "$usage\n$help"; exit;;
-        --example) example=$2; shift;;
+        --cd) changedir=true;;
         -*) unrecognized+=( "$1" );;
         *) infiles+=( "$1" );;
     esac
@@ -126,6 +136,10 @@ if [ ${#infiles[@]} -gt 1 ]; then
 fi
 
 in="${infiles[0]}"
+
+if [ "$changedir" = "true" ]; then
+    cd $(dirname $in)
+fi
 
 # Output to a file in /tmp.
 outdir='/tmp/watch-markdown'
@@ -150,7 +164,7 @@ cleanup() {
     # Do all cleanup, even if one step fails
     set +e
     # Kill the child we spawned (the 'entr' command below)
-    kill $childpid
+    kill $childpid 2>&1 | grep -v 'process'
     # Remove our output file
     rm -f "$out"
 }
@@ -161,11 +175,11 @@ css="$HOME/.config/watch-markdown/style.css"
 cmd="pandoc --standalone -c \"${css}\" \"${in}\" -o \"${out}\""
 
 # Convert markdown to HTML, and update whenever the markdown changes.
-# We don't really *need* the new shell, but without using it to parse $cmd,
-# I couldn't quote $cmd so that it actually worked. Attemps documented at:
+# The new shell is to parse $cmd. My failed attempts to pass $cmd to entr
+# without using a new shell are described here:
 # https://stackoverflow.com/questions/75467601/how-to-pass-a-bash-command-to-entr-quoting-to-guard-against-filenames-with-sp
-# I only don't use entr's '-s' arg to avoid the "Bash exit value: x" on stdout.
-echo "$in" | entr -n "$SHELL" -c "$cmd" &
+# I don't use entr's '-s' arg to avoid the "Bash exit value: x" on stdout.
+echo "$in" | entr -n -s "$cmd" &
 childpid=$!
 
 # Open a window to view the generated HTML. We want a viewer that:
