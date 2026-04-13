@@ -138,7 +138,7 @@ fi
 in="${infiles[0]}"
 
 if [ "$changedir" = "true" ]; then
-    cd $(dirname $in)
+    cd "$(dirname $in)"
 fi
 
 # Output to a file in /tmp.
